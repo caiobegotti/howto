@@ -104,8 +104,6 @@ Filebeat JSON processing for Kubernetes pods:
         process_array: true
         overwrite_keys: true
         add_error_key: true
-     #- drop_fields:
-     #    fields: ['message']
 ```
 
 Fluentbit version for JSON logs and text logs with mapping:
@@ -137,9 +135,9 @@ Fluentbit version for JSON logs and text logs with mapping:
     Decode_Field_As   escaped_utf8    log
 
 [PARSER]
-    Name    myapp
+    Name    app
     Format  regex
-    Regex   ^(?<myapp_timestamp>[^ ]+) (?<log_type>[^ ]+) (?<jaeger_span_id>[^ ]+)? (?<log_level>[^ ]+) (?<filename>[^ ]+) (?<line_number>[^ ]+) (?<request_type>[^ ]+) "(?<called_method>[^"]+)?" "(?<message>.+)?" "(?<details>.+)?".*$
+    Regex   ^(?<app_timestamp>[^ ]+) (?<log_type>[^ ]+) (?<jaeger_span_id>[^ ]+)? (?<log_level>[^ ]+) (?<filename>[^ ]+) (?<line_number>[^ ]+) (?<request_type>[^ ]+) "(?<called_method>[^"]+)?" "(?<message>.+)?" "(?<details>.+)?".*$
 
 [OUTPUT]
     Name            es
@@ -149,9 +147,22 @@ Fluentbit version for JSON logs and text logs with mapping:
     HTTP_User       ${ELASTICSEARCH_USERNAME}
     HTTP_Passwd     ${ELASTICSEARCH_PASSWORD}
     Logstash_Format On
-    Logstash_Prefix myapp
+    Logstash_Prefix app
     Replace_Dots    On
     Retry_Limit     False
     tls             On
     tls.verify      Off
+```
+
+Logstash exploding the JSON message field into multiple ones with a prefix:
+
+```
+filter {
+    if [message] =~ /^{.*}$/ {
+        json {
+            source => message
+            target => "app"
+        }
+    }
+}
 ```
