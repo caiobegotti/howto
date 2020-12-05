@@ -31,22 +31,6 @@ PUT /_ingest/pipeline/mypipeline
   ]
 }
 
-POST /_reindex
-{
-   "source": {
-       "index": "oldindex"
-   },
-   "dest": {
-       "index": "newindex",
-       "pipeline": "mypipeline"
-   }
-}
-
-PUT newindex/_settings
-{
-  "index.mapping.depth.limit": 1
-}
-
 PUT /newindex
 {
   "mappings": {
@@ -77,6 +61,22 @@ PUT /newindex
       }
     }
   }
+}
+
+PUT newindex/_settings
+{
+  "index.mapping.depth.limit": 1
+}
+
+POST /_reindex
+{
+   "source": {
+       "index": "oldindex"
+   },
+   "dest": {
+       "index": "newindex",
+       "pipeline": "mypipeline"
+   }
 }
 ```
 
