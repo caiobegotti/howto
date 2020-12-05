@@ -107,3 +107,51 @@ Filebeat JSON processing for Kubernetes pods:
      #- drop_fields:
      #    fields: ['message']
 ```
+
+Fluentbit version for JSON logs and text logs with mapping:
+
+```
+[INPUT]
+    Name              tail
+    Tag               kube.*
+    Path              /var/log/containers/*_mycluster_*.log
+    Parser            docker
+    DB                /var/log/flb_kube.db
+    Mem_Buf_Limit     5MB
+    Skip_Long_Lines   Off
+    Refresh_Interval  10
+    Ignore_Older      5d
+
+[PARSER]
+    Name   json
+    Format json
+    Time_Key time
+    Time_Format %d/%b/%Y:%H:%M:%S %z
+
+[PARSER]
+    Name        docker
+    Format      json
+    Time_Key    time
+    Time_Format %Y-%m-%dT%H:%M:%S.%L
+    Time_Keep   On
+    Decode_Field_As   escaped_utf8    log
+
+[PARSER]
+    Name    myapp
+    Format  regex
+    Regex   ^(?<myapp_timestamp>[^ ]+) (?<log_type>[^ ]+) (?<jaeger_span_id>[^ ]+)? (?<log_level>[^ ]+) (?<filename>[^ ]+) (?<line_number>[^ ]+) (?<request_type>[^ ]+) "(?<called_method>[^"]+)?" "(?<message>.+)?" "(?<details>.+)?".*$
+
+[OUTPUT]
+    Name            es
+    Match           *
+    Host            ${ELASTICSEARCH_HOST}
+    Port            ${ELASTICSEARCH_PORT}
+    HTTP_User       ${ELASTICSEARCH_USERNAME}
+    HTTP_Passwd     ${ELASTICSEARCH_PASSWORD}
+    Logstash_Format On
+    Logstash_Prefix myapp
+    Replace_Dots    On
+    Retry_Limit     False
+    tls             On
+    tls.verify      Off
+```
